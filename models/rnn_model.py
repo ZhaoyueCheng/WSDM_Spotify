@@ -5,10 +5,12 @@ import torch.nn.functional as F
 
 
 class RNNModel(nn.Module):
-    def __init__(self, args):
+    def __init__(self, args, song_mat):
         super(RNNModel, self).__init__()
 
-        self.song_embedding = nn.Embedding(num_embeddings=args.num_songs, embedding_dim=args.song_embedding_dim, padding_idx=0)
+        # self.song_embedding = nn.Embedding(num_embeddings=args.num_songs, embedding_dim=args.song_embedding_dim, padding_idx=0)
+        self.song_embedding = nn.Embedding.from_pretrained(song_mat, freeze=False, padding_idx=0)
+
         # self.optional_song_embedding = nn.Embedding(num_embeddings=args.num_songs, embedding_dim=28, padding_idx=0)
         self.history_rnn = StackedBRNN(input_size=args.song_embedding_dim + args.feature_dim,
                                        hidden_size=int(args.encoder_rnn_hidden_dim / 2),
@@ -43,8 +45,8 @@ class RNNModel(nn.Module):
 
         return logits
 
-    def init_embeddings(self, embedding_matrix):
-        self.song_embedding.weight.data.copy_(embedding_matrix)
+    # def init_embeddings(self, embedding_matrix):
+    #     self.song_embedding.weight.data.copy_(embedding_matrix)
 
 
 class RNNModelSelfAttn(nn.Module):
@@ -77,7 +79,7 @@ class RNNModelSelfAttn(nn.Module):
 
     def forward(self, ht, hf, hm, pt, pm):
         song_vec_history = self.song_embedding(ht)
-        song_vec_predict = self.song_embedding(pt,)
+        song_vec_predict = self.song_embedding(pt)
         # song_vec_opt = self.optional_song_embedding(x_song)
         history_input = torch.cat((song_vec_history, hf), dim=2)
         rnn_output_history = self.history_rnn.forward(x=history_input, x_mask=hm)

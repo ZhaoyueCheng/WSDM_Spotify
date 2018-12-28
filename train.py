@@ -341,7 +341,10 @@ for epoch in range(args.num_train_epochs):
                     'current_acc': ap,
                 }, is_best, filename=model_dir+'epoch_'+str(epoch))
 
+            print("Current best test ap is : " + str(best_acc))
+
     save_checkpoint({
+
         'epoch': epoch,
         'state_dict': model.state_dict(),
         'optimizer': optimizer.state_dict(),

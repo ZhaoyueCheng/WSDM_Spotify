@@ -27,6 +27,7 @@ parser.add_argument("--gradient_clipping",
                     default=10.0,
                     type=float,
                     help="The gradient clipping value")
+# Common Configs
 parser.add_argument("--num_train_epochs",
                     default=50,
                     type=int,
@@ -43,6 +44,8 @@ parser.add_argument("--feature_dim",
                     default=41,
                     type=int,
                     help="Dimension of Feature Embedding for history songs")
+
+# RNN Model Configs
 parser.add_argument("--encoder_rnn_hidden_dim",
                     default=100,
                     type=int,
@@ -59,6 +62,26 @@ parser.add_argument("--feed_forward_dropout",
                     default=0.2,
                     type=float,
                     help="Dropout rate of fed forward neural network")
+
+# CNN Model Configs
+parser.add_argument("--att_num_heads",
+                    default=8,
+                    type=int,
+                    help="Number of heads in Multi Head Attention Model")
+parser.add_argument("--cnn_model_dropout",
+                    default=0.1,
+                    type=float,
+                    help="Dropout rate of CNN Model")
+parser.add_argument("--cnn_channel_number",
+                    default=100,
+                    type=int,
+                    help="CNN Channel Number")
+parser.add_argument("--cnn_connector_dim",
+                    default=96,
+                    type=int,
+                    help="Dimension of CNN connectors")
+
+
 
 parser.add_argument("--model_name",
                     default='rnnmodel',
