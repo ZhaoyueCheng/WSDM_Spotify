@@ -15,13 +15,18 @@ import glob
 
 args = set_args()
 
-train_set_dir = "/media/data2/Data/wsdm2019/data/training_set/"
-test_set_dir = "/media/data2/Data/wsdm2019/data/test_set/"
-track_features_dir = "/media/data2/Data/wsdm2019/python/data/track_features/"
+# Local setup
+# base_dir = "/media/data2/"
+# AWS Setup
+base_dir = "/home/ubuntu/"
 
-train_files = "/media/data2/Data/wsdm2019/python/data/train_examples/"
-train_dir_pkl = "/media/data2/Data/wsdm2019/python/data/train_examples/"
-model_dir = "/media/data2/Data/wsdm2019/python/model/rnnattn1/"
+train_set_dir = base_dir + "/Data/wsdm2019/data/training_set/"
+test_set_dir = base_dir + "/Data/wsdm2019/data/test_set/"
+track_features_dir = base_dir + "/Data/wsdm2019/python/data/track_features/"
+
+train_files = base_dir + "/Data/wsdm2019/python/data/train_examples/"
+train_dir_pkl = base_dir + "/Data/wsdm2019/python/data/train_examples/"
+model_dir = base_dir + "/Data/wsdm2019/python/model/rnnattn2/"
 # model_dir = "/media/data2/Data/wsdm2019/python/model/rnnmodel/"
 
 categorical_feature_max_len = [6, 12, 11]
@@ -170,6 +175,10 @@ def train_model(model, optim, loss_fcn, args, train_examples, eval_examples, epo
 
     print(now.strftime("%H:%M") + ": TRAIN epoch: " + str(epoch) + " step: " + str(step) +
           " train accuracy: " + str(avg_acc / step) + " loss: " + str(avg_loss / step))
+
+    with open("./log.txt", "a") as myfile:
+        myfile.write(now.strftime("%H:%M") + ": TRAIN epoch: " + str(epoch) + " step: " + str(step) +
+          " train accuracy: " + str(avg_acc / step) + " loss: " + str(avg_loss / step) + "\n")
     # avg_acc = 0
     # avg_loss = 0
 
@@ -240,10 +249,15 @@ def eval_model(model, optim, loss_fcn, args, eval_examples, epoch):
     print("EVAL epoch: " + str(epoch) + " test accuracy: " + str(avg_acc / step) +
           " loss: " + str(avg_loss / step))
 
+    with open("./log.txt", "a") as myfile:
+        myfile.write("EVAL ap: " + str(ap) + " first_pred_acc: " + str(first_pred_acc) + "\n")
+        myfile.write("EVAL epoch: " + str(epoch) + " test accuracy: " + str(avg_acc / step) +
+          " loss: " + str(avg_loss / step) + "\n")
+
     return ap
 
 
-def evaluate(submission,groundtruth):
+def evaluate(submission, groundtruth):
     ap_sum = 0.0
     first_pred_acc_sum = 0.0
     counter = 0
@@ -283,9 +297,9 @@ with open(track_features_dir + "track2idx_all.pkl", "rb") as f:
 #     valid_examples = pickle.load(f)
 
 pkl_files = sorted(glob.glob(train_dir_pkl+"*.pkl"))
-train_pkl_files = pkl_files[:400]
+train_pkl_files = pkl_files[:500]
     #.extend(pkl_files[42:])
-valid_pkl_files = pkl_files[400:402]
+valid_pkl_files = pkl_files[500:502]
 
 valid_examples = []
 for valid_pkl_file in valid_pkl_files:
@@ -303,7 +317,8 @@ music_embedding = torch.Tensor(vector)
 max_length = args.max_length
 
 # model = RNNModel(args)
-model = RNNModelAtt1(args)
+# model = RNNModelAtt1(args)
+model = RNNModelAtt2(args)
 model.cuda()
 model.init_embeddings(music_embedding)
 
@@ -315,6 +330,8 @@ best_acc = 0
 
 ap = eval_model(model, optimizer, loss_fcn, args, valid_examples, -1)
 
+step = 0
+
 for epoch in range(args.num_train_epochs):
 
     random.shuffle(train_pkl_files)
@@ -325,30 +342,34 @@ for epoch in range(args.num_train_epochs):
 
             train_model(model, optimizer, loss_fcn, args, train_examples, valid_examples, epoch, best_acc)
 
-            # if (epoch + 1) % 1 == 0:
+            step += 1
 
-            ap = eval_model(model, optimizer, loss_fcn,  args, valid_examples, epoch)
+            if step % 5 == 0:
 
-            is_best = False
-            if ap > best_acc:
-                best_acc = ap
-                is_best = True
+                ap = eval_model(model, optimizer, loss_fcn,  args, valid_examples, epoch)
 
-                save_checkpoint({
-                    'epoch': epoch,
-                    'state_dict': model.state_dict(),
-                    'optimizer': optimizer.state_dict(),
-                    'current_acc': ap,
-                }, is_best, filename=model_dir+'epoch_'+str(epoch))
+                is_best = False
+                if ap > best_acc:
+                    best_acc = ap
+                    is_best = True
 
-            print("Current best test ap is : " + str(best_acc))
+                    save_checkpoint({
+                        'epoch': epoch,
+                        'state_dict': model.state_dict(),
+                        'optimizer': optimizer.state_dict(),
+                        'current_acc': ap,
+                    }, is_best, filename=model_dir+'epoch_'+str(epoch))
 
-    save_checkpoint({
+                print("Current best test ap is : " + str(best_acc))
+                with open("./log.txt", "a") as myfile:
+                    myfile.write("Current best test ap is : " + str(best_acc) + "\n")
 
-        'epoch': epoch,
-        'state_dict': model.state_dict(),
-        'optimizer': optimizer.state_dict(),
-        'current_acc': ap,
-    }, is_best, filename=model_dir+'epoch_'+str(epoch))
+    # save_checkpoint({
+    #
+    #     'epoch': epoch,
+    #     'state_dict': model.state_dict(),
+    #     'optimizer': optimizer.state_dict(),
+    #     'current_acc': ap,
+    # }, is_best, filename=model_dir+'epoch_'+str(epoch))
 
     print("Epoch " + str(epoch) + " Done.")

@@ -21,8 +21,8 @@ track_features_dir = "/media/data2/Data/wsdm2019/python/data/track_features/"
 
 train_files = "/media/data2/Data/wsdm2019/python/data/train_examples/"
 train_dir_pkl = "/media/data2/Data/wsdm2019/python/data/train_examples/"
-# model_dir = "/media/data2/Data/wsdm2019/python/model/rnnattn1/"
-model_dir = "/media/data2/Data/wsdm2019/python/model/rnnmodel/"
+model_dir = "/media/data2/Data/wsdm2019/python/model/rnnattn1/"
+# model_dir = "/media/data2/Data/wsdm2019/python/model/rnnmodel/"
 
 test_dir_pkl = "/media/data2/Data/wsdm2019/python/data/test_examples/"
 
@@ -334,15 +334,17 @@ def inference_model(model, optim, args, inf_examples):
 
         res = (encoder_result.detach().cpu().numpy() > 0.5) * lmd
 
+        s = ''
+
         for (x, z) in zip(res, lmd):
             nonzero = z.nonzero()
             prediction = x[nonzero]
-            s = ''
+
             for i in prediction:
                 s += str(int(i))
             s += '\n'
 
-            with open("pred.txt", "a") as myfile:
+        with open("pred.txt", "a") as myfile:
                 myfile.write(s)
 
 def evaluate(submission,groundtruth):
@@ -386,7 +388,7 @@ with open(track_features_dir + "track2idx_all.pkl", "rb") as f:
 
 pkl_files = sorted(glob.glob(train_dir_pkl+"*.pkl"))
 # train_pkl_files = pkl_files[:250]
-valid_pkl_files = pkl_files[250:252]
+valid_pkl_files = pkl_files[500:505]
 
 test_files = sorted(glob.glob(test_dir_pkl+"*.pkl"))
 
@@ -406,8 +408,8 @@ music_embedding = torch.Tensor(vector)
 # brute force pad everything to length 10 since all the (history/predict) can have maximum of 10 songs
 max_length = args.max_length
 
-model = RNNModel(args)
-# model = RNNModelAtt1(args)
+# model = RNNModel(args)
+model = RNNModelAtt1(args)
 model.cuda()
 model.init_embeddings(music_embedding)
 
@@ -420,7 +422,7 @@ best_acc = 0
 # for epoch in range(args.num_train_epochs):
 
 # load checkpoint
-checkpoint = torch.load(model_dir + 'model_best.pth.tar')
+checkpoint = torch.load(model_dir + 'model_best')
 print('epoch: ' + str(checkpoint['epoch']))
 print('acc: ' + str(checkpoint['current_acc']))
 model.load_state_dict(checkpoint['state_dict'])

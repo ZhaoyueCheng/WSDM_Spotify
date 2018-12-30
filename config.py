@@ -12,7 +12,7 @@ parser.add_argument("--train_batch_size",
                     type=int,
                     help="Total batch size for training.")
 parser.add_argument("--eval_batch_size",
-                    default=400,
+                    default=1000,
                     type=int,
                     help="Total batch size for eval.")
 parser.add_argument("--learning_rate",

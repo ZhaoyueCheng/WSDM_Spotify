@@ -24,6 +24,8 @@ train_dir_pkl = "/media/data2/Data/wsdm2019/python/data/train_examples/"
 model_dir = "/media/data2/Data/wsdm2019/python/model/rnnattn1/"
 # model_dir = "/media/data2/Data/wsdm2019/python/model/rnnmodel/"
 
+second_stage_file_dir = "/media/data2/Data/wsdm2019/python/data/second_stage/"
+
 categorical_feature_max_len = [6, 12, 11]
 
 def one_hot_embedding(labels, num_classes):
@@ -242,6 +244,55 @@ def eval_model(model, optim, loss_fcn, args, eval_examples, epoch):
 
     return ap
 
+def inference_model(model, optim, args, inf_examples, inf_file_name):
+
+    new_file_name = second_stage_file_dir + inf_file_name[54:-4] + "_second_stage.csv"
+
+    print(new_file_name)
+
+    with open(new_file_name, "a") as myfile:
+        myfile.write("logits\n")
+
+    model.eval()
+    batch_size = args.eval_batch_size
+    dataset_size = len(inf_examples)
+
+    for start_index in trange(0, dataset_size, batch_size):
+        end_index = min(start_index + batch_size, dataset_size)
+        batch = inf_examples[start_index: end_index]
+
+        ht, hf, hm, pt, pm, t = batchGen(batch)
+
+        lm = (1 - pm).float()
+
+        encoder_result = model.forward(ht, hf, hm, pt, pm)
+
+        lmd = lm.detach().cpu().numpy()
+
+        logits = encoder_result.detach().cpu().numpy()
+
+        # res = (encoder_result.detach().cpu().numpy() > 0.5) * lmd
+
+        # Start building string
+        s = ''
+
+        historylen = hm.eq(0).detach().cpu().numpy()
+
+        for (x, y, z) in zip(logits, historylen, lmd):
+            nonzero = z.nonzero()
+            logit = x[nonzero]
+
+            num_zero = np.sum(y)
+
+            s += '0\n' * num_zero
+
+            for i in logit:
+                s += str(i)
+                s += '\n'
+
+        with open(new_file_name, "a") as myfile:
+            myfile.write(s)
+
 
 def evaluate(submission,groundtruth):
     ap_sum = 0.0
@@ -283,11 +334,14 @@ with open(track_features_dir + "track2idx_all.pkl", "rb") as f:
 #     valid_examples = pickle.load(f)
 
 pkl_files = sorted(glob.glob(train_dir_pkl+"*.pkl"))
-train_pkl_files = pkl_files[:400]
+train_pkl_files = pkl_files[:600]
     #.extend(pkl_files[42:])
-valid_pkl_files = pkl_files[400:402]
+# valid_pkl_files = pkl_files[400:402]
 
-inference_pkl_files = pkl_files[500:656]
+
+valid_pkl_files = pkl_files[600:602]
+
+inference_pkl_files = pkl_files[600:]
 
 valid_examples = []
 for valid_pkl_file in valid_pkl_files:
@@ -315,42 +369,31 @@ loss_fcn = torch.nn.BCELoss(reduction='none')
 
 best_acc = 0
 
+# load checkpoint
+checkpoint = torch.load(model_dir + 'model_best')
+print('epoch: ' + str(checkpoint['epoch']))
+print('acc: ' + str(checkpoint['current_acc']))
+model.load_state_dict(checkpoint['state_dict'])
+optimizer.load_state_dict(checkpoint['optimizer'])
+
+
+best_acc = 0
+
+print("evaluation after loading")
+
 ap = eval_model(model, optimizer, loss_fcn, args, valid_examples, -1)
 
-for epoch in range(args.num_train_epochs):
+for inf_pkl_file in inference_pkl_files:
+    with open(inf_pkl_file, "rb") as f:
 
-    random.shuffle(train_pkl_files)
+        inference_examples = pickle.load(f)
 
-    for train_pkl_file in train_pkl_files:
-        with open(train_pkl_file, "rb") as f:
-            train_examples = pickle.load(f)
+        # train_model(model, optimizer, loss_fcn, args, train_examples, valid_examples, epoch, best_acc)
 
-            train_model(model, optimizer, loss_fcn, args, train_examples, valid_examples, epoch, best_acc)
+        # if (epoch + 1) % 1 == 0:
 
-            # if (epoch + 1) % 1 == 0:
+        ap = inference_model(model, optimizer, args, inference_examples, inf_pkl_file)
 
-            ap = eval_model(model, optimizer, loss_fcn,  args, valid_examples, epoch)
 
-            is_best = False
-            if ap > best_acc:
-                best_acc = ap
-                is_best = True
 
-                save_checkpoint({
-                    'epoch': epoch,
-                    'state_dict': model.state_dict(),
-                    'optimizer': optimizer.state_dict(),
-                    'current_acc': ap,
-                }, is_best, filename=model_dir+'epoch_'+str(epoch))
-
-            print("Current best test ap is : " + str(best_acc))
-
-    save_checkpoint({
-
-        'epoch': epoch,
-        'state_dict': model.state_dict(),
-        'optimizer': optimizer.state_dict(),
-        'current_acc': ap,
-    }, is_best, filename=model_dir+'epoch_'+str(epoch))
-
-    print("Epoch " + str(epoch) + " Done.")
+    # print("Epoch " + str(epoch) + " Done.")

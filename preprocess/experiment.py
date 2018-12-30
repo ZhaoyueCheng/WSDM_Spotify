@@ -12,31 +12,38 @@ import glob
 def mapbool(s):
     return s.lower in ['true','1']
 
-train_set_dir = "/media/data1/Data/wsdm2019/data/training_set/"
+train_set_dir = "/media/data2/Data/wsdm2019/data/training_set/"
 test_set_dir = "/media/data1/Data/wsdm2019/data/test_set/"
 track_features_dir = "/media/data1/Data/wsdm2019/data/test_set/"
 
 output_dir = "/media/data1/Data/wsdm2019/data/python/"
 
-large_train_set_dir = "/media/data2/Data/wsdm2019/python/data/training_set/"
+train_files_dir = sorted(glob.glob(train_set_dir +  "*.csv"))
 
-track_feature_files = sorted(glob.glob(track_features_dir+"*.csv"))
+# large_train_set_dir = "/media/data2/Data/wsdm2019/python/data/training_set/"
 
-# for file_dir in track_feature_files:
-track_feature_dir_0 = track_feature_files[0]
-track_feature_0 = pd.read_csv(track_feature_dir_0)
-
-track_feature_dir_1 = track_feature_files[1]
-track_feature_1 = pd.read_csv(track_feature_dir_1)
-
-track_feature_all = track_feature_0.append(track_feature_1)
+# track_feature_files = sorted(glob.glob(track_features_dir+"*.csv"))
+#
+# # for file_dir in track_feature_files:
+# track_feature_dir_0 = track_feature_files[0]
+# track_feature_0 = pd.read_csv(track_feature_dir_0)
+#
+# track_feature_dir_1 = track_feature_files[1]
+# track_feature_1 = pd.read_csv(track_feature_dir_1)
+#
+# track_feature_all = track_feature_0.append(track_feature_1)
 
 # large_files = sorted(glob.glob(large_train_set_dir + "*.csv"))
 #
 # large_file = large_files[1]
 #
-# df = pd.read_csv(large_file)
-#
+df = pd.read_csv(train_files_dir[0])
+
+groups = df.groupby('session_id')
+
+for name, group in groups:
+    print(group['context_type'].drop_duplicates().shape[0])
+
 # print(df['hist_user_behavior_n_seekfwd'].max())
 # print(df['hist_user_behavior_n_seekback'].max())
 # print(df['hour_of_day'].max())
