@@ -82,7 +82,10 @@ parser.add_argument("--cnn_connector_dim",
                     help="Dimension of CNN connectors")
 
 
-
+parser.add_argument("--log_name",
+                    default="./log.txt",
+                    type=str,
+                    help="Name of the log file")
 parser.add_argument("--model_name",
                     default='rnnmodel',
                     type=str,
@@ -102,6 +105,7 @@ parser.add_argument("--track_set_dir",
                     default=main_dir + "data/track_features",
                     type=str,
                     help="Directory of track raw csv files")
+
 # post processed python files
 parser.add_argument("--train_dir_pkl",
                     default=main_dir + "")

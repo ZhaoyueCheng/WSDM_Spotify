@@ -9,6 +9,19 @@ import copy
 # ------------------------------------------------------------------------------
 # Modules
 # ------------------------------------------------------------------------------
+class PositionwiseNN(nn.Module):
+    def __init__(self, idim, hdim, dropout_rate=None):
+        super(PositionwiseNN, self).__init__()
+        self.w_0 = nn.Conv1d(idim, hdim, 1)
+        self.w_1 = nn.Conv1d(hdim, hdim, 1)
+        self.dropout_rate = dropout_rate
+
+    def forward(self, x):
+        output = F.relu(self.w_0(x.transpose(1, 2)))
+        output = F.dropout(output, p=self.dropout_rate, training=self.training)
+        output = self.w_1(output)
+        output = F.dropout(output, p=self.dropout_rate, training=self.training).transpose(2, 1)
+        return output
 
 
 class StackedBRNN(nn.Module):

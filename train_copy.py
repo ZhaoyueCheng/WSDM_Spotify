@@ -15,13 +15,18 @@ import glob
 
 args = set_args()
 
-train_set_dir = "/media/data2/Data/wsdm2019/data/training_set/"
-test_set_dir = "/media/data2/Data/wsdm2019/data/test_set/"
-track_features_dir = "/media/data2/Data/wsdm2019/python/data/track_features/"
+# Local setup
+# base_dir = "/media/data2/"
+# AWS Setup
+base_dir = "/home/ubuntu/"
 
-train_files = "/media/data2/Data/wsdm2019/python/data/train_examples/"
-train_dir_pkl = "/media/data2/Data/wsdm2019/python/data/train_examples/"
-model_dir = "/media/data2/Data/wsdm2019/python/model/rnnattn1/"
+train_set_dir = base_dir + "/Data/wsdm2019/data/training_set/"
+test_set_dir = base_dir + "/Data/wsdm2019/data/test_set/"
+track_features_dir = base_dir + "/Data/wsdm2019/python/data/track_features/"
+
+train_files = base_dir + "/Data/wsdm2019/python/data/train_examples/"
+train_dir_pkl = base_dir + "/Data/wsdm2019/python/data/train_examples/"
+model_dir = base_dir + "/Data/wsdm2019/python/model/rnnattn2/"
 # model_dir = "/media/data2/Data/wsdm2019/python/model/rnnmodel/"
 
 categorical_feature_max_len = [6, 12, 11]
@@ -120,7 +125,7 @@ def batchGen(examples):
            torch.cuda.LongTensor(predict_tracks), torch.cuda.ByteTensor(predict_sequence_masks), torch.cuda.FloatTensor(targets)
 
 
-def train_model(model, optim, args, train_examples, eval_examples, epoch, best_acc):
+def train_model(model, optim, loss_fcn, args, train_examples, eval_examples, epoch, best_acc):
     step = 0
 
     model.train()
@@ -170,8 +175,12 @@ def train_model(model, optim, args, train_examples, eval_examples, epoch, best_a
 
     print(now.strftime("%H:%M") + ": TRAIN epoch: " + str(epoch) + " step: " + str(step) +
           " train accuracy: " + str(avg_acc / step) + " loss: " + str(avg_loss / step))
-    avg_acc = 0
-    avg_loss = 0
+
+    with open("./log.txt", "a") as myfile:
+        myfile.write(now.strftime("%H:%M") + ": TRAIN epoch: " + str(epoch) + " step: " + str(step) +
+          " train accuracy: " + str(avg_acc / step) + " loss: " + str(avg_loss / step) + "\n")
+    # avg_acc = 0
+    # avg_loss = 0
 
         # if step % 1800 == 0:
         #     ap = eval_model(model, args, eval_examples, epoch)
@@ -191,7 +200,7 @@ def train_model(model, optim, args, train_examples, eval_examples, epoch, best_a
 
         # step += 1
 
-def eval_model(model, optim, args, eval_examples, epoch):
+def eval_model(model, optim, loss_fcn, args, eval_examples, epoch):
 
     # for official evaluating script
     groundtruth = []
@@ -240,11 +249,15 @@ def eval_model(model, optim, args, eval_examples, epoch):
     print("EVAL epoch: " + str(epoch) + " test accuracy: " + str(avg_acc / step) +
           " loss: " + str(avg_loss / step))
 
+    with open("./log.txt", "a") as myfile:
+        myfile.write("EVAL ap: " + str(ap) + " first_pred_acc: " + str(first_pred_acc) + "\n")
+        myfile.write("EVAL epoch: " + str(epoch) + " test accuracy: " + str(avg_acc / step) +
+          " loss: " + str(avg_loss / step) + "\n")
 
     return ap
 
 
-def evaluate(submission,groundtruth):
+def evaluate(submission, groundtruth):
     ap_sum = 0.0
     first_pred_acc_sum = 0.0
     counter = 0
@@ -284,9 +297,9 @@ with open(track_features_dir + "track2idx_all.pkl", "rb") as f:
 #     valid_examples = pickle.load(f)
 
 pkl_files = sorted(glob.glob(train_dir_pkl+"*.pkl"))
-# train_pkl_files = pkl_files[:40].extend(pkl_files[42:])
-train_pkl_files = pkl_files[:300]
-valid_pkl_files = pkl_files[300:302]
+train_pkl_files = pkl_files[:500]
+    #.extend(pkl_files[42:])
+valid_pkl_files = pkl_files[500:502]
 
 valid_examples = []
 for valid_pkl_file in valid_pkl_files:
@@ -303,16 +316,21 @@ music_embedding = torch.Tensor(vector)
 # brute force pad everything to length 10 since all the (history/predict) can have maximum of 10 songs
 max_length = args.max_length
 
-model = RNNModel(args)
+# model = RNNModel(args)
 # model = RNNModelAtt1(args)
+model = RNNModelAtt2(args)
 model.cuda()
 model.init_embeddings(music_embedding)
 
-optim = torch.optim.Adamax(params=model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
+optimizer = torch.optim.Adamax(params=filter(lambda p: p.requires_grad, model.parameters()), lr=args.learning_rate, weight_decay=args.weight_decay)
 
 loss_fcn = torch.nn.BCELoss(reduction='none')
 
 best_acc = 0
+
+ap = eval_model(model, optimizer, loss_fcn, args, valid_examples, -1)
+
+step = 0
 
 for epoch in range(args.num_train_epochs):
 
@@ -322,29 +340,35 @@ for epoch in range(args.num_train_epochs):
         with open(train_pkl_file, "rb") as f:
             train_examples = pickle.load(f)
 
-            train_model(model, optim, args, train_examples, valid_examples, epoch, best_acc)
+            train_model(model, optimizer, loss_fcn, args, train_examples, valid_examples, epoch, best_acc)
 
-            # if (epoch + 1) % 1 == 0:
+            step += 1
 
-            ap = eval_model(model, optim,  args, valid_examples, epoch)
-            print("current best ap is : " + str(best_acc))
+            if step % 5 == 0:
 
-            is_best = False
-            if ap > best_acc:
-                best_acc = ap
-                is_best = True
+                ap = eval_model(model, optimizer, loss_fcn,  args, valid_examples, epoch)
 
-                save_checkpoint({
-                    'epoch': epoch,
-                    'state_dict': model.state_dict(),
-                    'optimizer': optim.state_dict(),
-                    'current_acc': ap,
-                }, is_best, filename=model_dir+'epoch_'+str(epoch))
+                is_best = False
+                if ap > best_acc:
+                    best_acc = ap
+                    is_best = True
+
+                    save_checkpoint({
+                        'epoch': epoch,
+                        'state_dict': model.state_dict(),
+                        'optimizer': optimizer.state_dict(),
+                        'current_acc': ap,
+                    }, is_best, filename=model_dir+'epoch_'+str(epoch))
+
+                print("Current best test ap is : " + str(best_acc))
+                with open("./log.txt", "a") as myfile:
+                    myfile.write("Current best test ap is : " + str(best_acc) + "\n")
 
     # save_checkpoint({
+    #
     #     'epoch': epoch,
     #     'state_dict': model.state_dict(),
-    #     'optimizer': optim.state_dict(),
+    #     'optimizer': optimizer.state_dict(),
     #     'current_acc': ap,
     # }, is_best, filename=model_dir+'epoch_'+str(epoch))
 

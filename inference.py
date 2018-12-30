@@ -41,10 +41,10 @@ def one_hot_embedding(labels, num_classes):
     y = np.eye(num_classes)
     return y[labels]
 
-def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):
-    torch.save(state, filename)
-    if is_best:
-        shutil.copyfile(filename, model_dir + 'model_best')
+# def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):
+#     torch.save(state, filename)
+#     if is_best:
+#         shutil.copyfile(filename, model_dir + 'model_best')
 
 def batchGen(examples):
     history_tracks = []
@@ -250,7 +250,7 @@ def inference_model(model, optim, args, inf_examples, inf_file_name):
 
     print(new_file_name)
 
-    with open(new_file_name, "a") as myfile:
+    with open(new_file_name, "w+") as myfile:
         myfile.write("logits\n")
 
     model.eval()
@@ -339,9 +339,9 @@ train_pkl_files = pkl_files[:600]
 # valid_pkl_files = pkl_files[400:402]
 
 
-valid_pkl_files = pkl_files[600:602]
+valid_pkl_files = pkl_files[600:605]
 
-inference_pkl_files = pkl_files[600:]
+inference_pkl_files = pkl_files[-66:]
 
 valid_examples = []
 for valid_pkl_file in valid_pkl_files:
@@ -392,7 +392,7 @@ for inf_pkl_file in inference_pkl_files:
 
         # if (epoch + 1) % 1 == 0:
 
-        ap = inference_model(model, optimizer, args, inference_examples, inf_pkl_file)
+        inference_model(model, optimizer, args, inference_examples, inf_pkl_file)
 
 
 
