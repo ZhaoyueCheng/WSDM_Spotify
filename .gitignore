@@ -2,3 +2,4 @@
 \.idea/
 
 pred.txt
+*.pyc
