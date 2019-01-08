@@ -7,6 +7,11 @@ from config import set_args
 
 args = set_args()
 
+Nh = args.att_num_heads
+D = args.cnn_channel_number
+batch_size = args.train_batch_size
+dropout = args.cnn_model_dropout
+
 class Initialized_Conv1d(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size=1, relu=False, stride=1, padding=0, groups=1, bias=False):
         super().__init__()
@@ -57,7 +62,7 @@ class DepthwiseSeparableConv(nn.Module):
 
 
 class Highway(nn.Module):
-    def __init__(self, layer_num: int, size, dropout):
+    def __init__(self, layer_num: int, size=D):
         super().__init__()
         self.n = layer_num
         self.dropout = dropout
@@ -201,6 +206,21 @@ class EncoderBlock(nn.Module):
         else:
             return inputs + residual
 
+class Embedding(nn.Module):
+    def __init__(self, dim_input, dim_output):
+        super().__init__()
+        self.conv1d = Initialized_Conv1d(dim_input, dim_output, bias=False)
+        self.high = Highway(2)
+
+    def forward(self, emb):
+        emb = F.dropout(emb, p=dropout, training=self.training)
+        emb = emb.transpose(1, 2)
+
+        emb = self.conv1d(emb)
+        emb = self.high(emb)
+        return emb
+
+
 
 class CQAttention(nn.Module):
     def __init__(self):
@@ -246,4 +266,5 @@ class CQAttention(nn.Module):
 
 def mask_logits(inputs, mask):
     mask = mask.type(torch.float32)
-    return inputs + (-1e30) * (1 - mask)
+    # return inputs + (-1e30) * (1 - mask)
+    return inputs + (-1e30) * mask

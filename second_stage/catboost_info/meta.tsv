@@ -1,7 +1,7 @@
 name	experiment
-iterCount	100
+iterCount	30
 learnErrorLog	learn_error.tsv
 testErrorLog	test_error.tsv
 timeLeft	time_left.tsv
-loss	AUC	max
+loss	Accuracy	max
 loss	Logloss	min

@@ -3,3 +3,9 @@
 
 pred.txt
 *.pyc
+
+*.npy
+
+second_stage/old_blend/
+
+second_stage/linear_reg

@@ -16,7 +16,7 @@ parser.add_argument("--eval_batch_size",
                     type=int,
                     help="Total batch size for eval.")
 parser.add_argument("--learning_rate",
-                    default=0.002,
+                    default=0.001,
                     type=float,
                     help="The learning rate for Optimizer.")
 parser.add_argument("--weight_decay",
@@ -73,13 +73,14 @@ parser.add_argument("--cnn_model_dropout",
                     type=float,
                     help="Dropout rate of CNN Model")
 parser.add_argument("--cnn_channel_number",
-                    default=100,
+                    default=128,
                     type=int,
                     help="CNN Channel Number")
-parser.add_argument("--cnn_connector_dim",
-                    default=96,
-                    type=int,
-                    help="Dimension of CNN connectors")
+# parser.add_argument("--cnn_connector_dim",
+#                     default=96,
+#                     type=int,
+#                     help="Dimension of CNN connectors")
+
 
 
 parser.add_argument("--log_name",

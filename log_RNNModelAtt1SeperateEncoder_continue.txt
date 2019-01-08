@@ -1,0 +1,51 @@
+RNNModelAtt1SeperateEncoder_Double_LSTM(
+  (song_embedding): Embedding(3706389, 30, padding_idx=0)
+  (history_rnn): StackedBRNN(
+    (rnns): ModuleList(
+      (0): LSTM(71, 50, bidirectional=True)
+      (1): LSTM(100, 50, bidirectional=True)
+    )
+  )
+  (predict_rnn): StackedBRNN(
+    (rnns): ModuleList(
+      (0): LSTM(30, 50, bidirectional=True)
+      (1): LSTM(100, 50, bidirectional=True)
+    )
+  )
+  (history_attn_predict): SeqAttnMatch(
+    (linear): Linear(in_features=100, out_features=100, bias=True)
+  )
+  (history_attn_self): SelfAttnMatch(
+    (linear): Linear(in_features=100, out_features=100, bias=True)
+  )
+  (predict_attn_history): SeqAttnMatch(
+    (linear): Linear(in_features=100, out_features=100, bias=True)
+  )
+  (predict_attn_self): SelfAttnMatch(
+    (linear): Linear(in_features=100, out_features=100, bias=True)
+  )
+  (combine_rnn): StackedBRNN(
+    (rnns): ModuleList(
+      (0): LSTM(300, 100, bidirectional=True)
+      (1): LSTM(200, 100, bidirectional=True)
+    )
+  )
+  (combine_attn_self): SelfAttnMatch(
+    (linear): Linear(in_features=200, out_features=200, bias=True)
+  )
+  (ff1): FeedForwardNetwork(
+    (linear1): Linear(in_features=400, out_features=200, bias=True)
+    (linear2): Linear(in_features=200, out_features=100, bias=True)
+  )
+  (ff2): FeedForwardNetwork(
+    (linear1): Linear(in_features=100, out_features=50, bias=True)
+    (linear2): Linear(in_features=50, out_features=1, bias=True)
+  )
+)
+
+Loaded checkpoint: /home/joey/Desktop/RNNModelAtt1SeperateEncoder_Double_LSTM/model_best
+epoch: 1
+acc: 0.6285323860062362
+evaluation after loading 
+EVAL ap: 0.6299504855263525 first_pred_acc: 0.799387100563229
+EVAL epoch: -1 test accuracy: 0.725924000387257 loss: 0.5353418781670726

@@ -21,8 +21,13 @@ track_features_dir = "/media/data2/Data/wsdm2019/python/data/track_features/"
 
 train_files = "/media/data2/Data/wsdm2019/python/data/train_examples/"
 train_dir_pkl = "/media/data2/Data/wsdm2019/python/data/train_examples/"
-model_dir = "/media/data2/Data/wsdm2019/python/model/rnnattn1/"
+# model_dir = "/media/data2/Data/wsdm2019/python/model/rnnattn1/"
 # model_dir = "/media/data2/Data/wsdm2019/python/model/rnnmodel/"
+# model_dir = "/media/data2/Data/wsdm2019/python/model/RNNModelAtt1SeperateEncoder/"
+# model_dir = "/home/joey/Desktop/RNNModelAtt1SeperateEncoder/"
+# model_dir = "/media/data2/Data/wsdm2019/python/model/RNNModelAtt1SeperateEncoder_weight_loss/"
+model_dir = "/home/joey/Desktop/RNNModelAtt1SeperateEncoder/"
+
 
 test_dir_pkl = "/media/data2/Data/wsdm2019/python/data/test_examples/"
 
@@ -388,7 +393,7 @@ with open(track_features_dir + "track2idx_all.pkl", "rb") as f:
 
 pkl_files = sorted(glob.glob(train_dir_pkl+"*.pkl"))
 # train_pkl_files = pkl_files[:250]
-valid_pkl_files = pkl_files[500:505]
+valid_pkl_files = pkl_files[600:610]
 
 test_files = sorted(glob.glob(test_dir_pkl+"*.pkl"))
 
@@ -409,7 +414,8 @@ music_embedding = torch.Tensor(vector)
 max_length = args.max_length
 
 # model = RNNModel(args)
-model = RNNModelAtt1(args)
+# model = RNNModelAtt1(args)
+model = RNNModelAtt1SeperateEncoder(args)
 model.cuda()
 model.init_embeddings(music_embedding)
 

@@ -21,8 +21,9 @@ track_features_dir = "/media/data2/Data/wsdm2019/python/data/track_features/"
 
 train_files = "/media/data2/Data/wsdm2019/python/data/train_examples/"
 train_dir_pkl = "/media/data2/Data/wsdm2019/python/data/train_examples/"
-model_dir = "/media/data2/Data/wsdm2019/python/model/rnnattn1/"
+# model_dir = "/media/data2/Data/wsdm2019/python/model/rnnattn1/"
 # model_dir = "/media/data2/Data/wsdm2019/python/model/rnnmodel/"
+# model_dir = "/media/data2/Data/wsdm2019/python/model/RNNModelAtt1SeperateEncoder/"
 
 second_stage_file_dir = "/media/data2/Data/wsdm2019/python/data/second_stage/"
 
@@ -206,7 +207,7 @@ def eval_model(model, optim, loss_fcn, args, eval_examples, epoch):
     avg_loss = 0
     step = 0
 
-    for start_index in range(0, dataset_size, batch_size):
+    for start_index in trange(0, dataset_size, batch_size):
         end_index = min(start_index + batch_size, dataset_size)
         batch = eval_examples[start_index: end_index]
 
@@ -246,11 +247,13 @@ def eval_model(model, optim, loss_fcn, args, eval_examples, epoch):
 
 def inference_model(model, optim, args, inf_examples, inf_file_name):
 
-    new_file_name = second_stage_file_dir + inf_file_name[54:-4] + "_second_stage.csv"
+    # new_file_name = second_stage_file_dir + inf_file_name[54:-4] + "_second_stage.csv"
+    new_file_name1 = model_dir + "/second_stage/same_length/" + inf_file_name[54:-4] + "_second_stage.csv"
+    # new_file_name2 = model_dir + "/second_stage/logits_row/" + inf_file_name[54:-4] + "_second_stage.csv"
 
-    print(new_file_name)
+    print(new_file_name1)
 
-    with open(new_file_name, "w+") as myfile:
+    with open(new_file_name1, "w+") as myfile:
         myfile.write("logits\n")
 
     model.eval()
@@ -274,7 +277,8 @@ def inference_model(model, optim, args, inf_examples, inf_file_name):
         # res = (encoder_result.detach().cpu().numpy() > 0.5) * lmd
 
         # Start building string
-        s = ''
+        s1 = ''
+        # s2 = ''
 
         historylen = hm.eq(0).detach().cpu().numpy()
 
@@ -284,17 +288,24 @@ def inference_model(model, optim, args, inf_examples, inf_file_name):
 
             num_zero = np.sum(y)
 
-            s += '0\n' * num_zero
+            s1 += '0\n' * num_zero
 
             for i in logit:
-                s += str(i)
-                s += '\n'
+                s1 += str(i)
+                s1 += '\n'
 
-        with open(new_file_name, "a") as myfile:
-            myfile.write(s)
+            #     s2 += str(i) + ', '
+            #
+            # s2 = s2[:-2] + '\n'
+
+        with open(new_file_name1, "a") as myfile:
+            myfile.write(s1)
+
+        # with open(new_file_name2, "a") as myfile:
+        #     myfile.write(s2)
 
 
-def evaluate(submission,groundtruth):
+def evaluate(submission, groundtruth):
     ap_sum = 0.0
     first_pred_acc_sum = 0.0
     counter = 0
@@ -339,19 +350,15 @@ train_pkl_files = pkl_files[:600]
 # valid_pkl_files = pkl_files[400:402]
 
 
-valid_pkl_files = pkl_files[600:605]
+valid_pkl_files = pkl_files[600:610]
+# valid_pkl_files = pkl_files[600:601]
 
 inference_pkl_files = pkl_files[-66:]
 
-valid_examples = []
-for valid_pkl_file in valid_pkl_files:
-    with open(valid_pkl_file, "rb") as f:
-        valid_examples.extend(pickle.load(f))
-
-# random.seed(10)
-# random.shuffle(train_examples_load)
-# train_examples = train_examples_load[:int(len(train_examples_load) * 0.75)]
-# valid_examples = train_examples_load[int(len(train_examples_load) * 0.75):]
+# valid_examples = []
+# for valid_pkl_file in valid_pkl_files:
+#     with open(valid_pkl_file, "rb") as f:
+#         valid_examples.extend(pickle.load(f))
 
 music_embedding = torch.Tensor(vector)
 
@@ -359,7 +366,11 @@ music_embedding = torch.Tensor(vector)
 max_length = args.max_length
 
 # model = RNNModel(args)
-model = RNNModelAtt1(args)
+# model = RNNModelAtt1(args)
+# model = RNNModelAtt1SeperateEncoder(args)
+# model = RNNModelAtt1_Double_LSTM(args)
+model = RNNModelAtt1SeperateEncoder_Double_LSTM(args)
+
 model.cuda()
 model.init_embeddings(music_embedding)
 
@@ -370,6 +381,18 @@ loss_fcn = torch.nn.BCELoss(reduction='none')
 best_acc = 0
 
 # load checkpoint
+# model_dir = "/home/joey/Desktop/ensemble/RNNModelAtt1SeperateEncoder_lb_633/"
+# model_dir = "/home/joey/Desktop/ensemble/RNNModelAtt1SeperateEncoder_6306/"
+# model_dir = "/home/joey/Desktop/ensemble/RNNModelAtt1SeperateEncoder_6309/"
+# model_dir = "/home/joey/Desktop/ensemble/RNNModelAtt1SeperateEncoder_6315/"
+# model_dir = "/home/joey/Desktop/ensemble/RNNModelAtt1_Double_LSTM_6294/"
+# model_dir = "/home/joey/Desktop/ensemble/RNNModelAtt1_Double_LSTM_6302/"
+# model_dir = "/home/joey/Desktop/ensemble/RNNModelAtt1SeperateEncoder_Double_LSTM_6285/"
+model_dir = "/home/joey/Desktop/ensemble/RNNModelAtt1SeperateEncoder_Double_LSTM_6298/"
+
+
+print("Model Dir: " + model_dir)
+
 checkpoint = torch.load(model_dir + 'model_best')
 print('epoch: ' + str(checkpoint['epoch']))
 print('acc: ' + str(checkpoint['current_acc']))
@@ -381,7 +404,7 @@ best_acc = 0
 
 print("evaluation after loading")
 
-ap = eval_model(model, optimizer, loss_fcn, args, valid_examples, -1)
+# ap = eval_model(model, optimizer, loss_fcn, args, valid_examples, -1)
 
 for inf_pkl_file in inference_pkl_files:
     with open(inf_pkl_file, "rb") as f:

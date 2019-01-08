@@ -1,6 +1,8 @@
 from config import set_args
 from models.rnn_model import *
 from models.layers import *
+from models.layers_cnn import *
+from models.cnn_model import *
 import torch
 import numpy as np
 import math
@@ -123,6 +125,84 @@ def batchGen(examples):
     return torch.cuda.LongTensor(history_tracks), torch.cuda.FloatTensor(history_features), torch.cuda.ByteTensor(history_sequence_masks), \
            torch.cuda.LongTensor(predict_tracks), torch.cuda.ByteTensor(predict_sequence_masks), torch.cuda.FloatTensor(targets)
 
+def train_model_weight_loss(model, optim, loss_fcn, args, train_examples, eval_examples, epoch, best_acc):
+    step = 0
+
+    model.train()
+
+    dataset_size = len(train_examples)
+    batch_size = args.train_batch_size
+
+    avg_acc = 0.0
+    avg_loss = 0.0
+
+    random.shuffle(train_examples)
+
+    weight_loss = torch.cuda.FloatTensor([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1])
+
+    for start_index in trange(0, dataset_size, batch_size):
+        end_index = min(start_index + batch_size, dataset_size)
+        batch = train_examples[start_index: end_index]
+
+        ht, hf, hm, pt, pm, t = batchGen(batch)
+
+        lm = (1 - pm).float()
+
+        encoder_result = model.forward(ht, hf, hm, pt, pm)
+
+        # 1 - pm because mask is 0 for real value and 1 for padding values
+        # loss = (loss_fcn(encoder_result, t) * lm).mean()
+        loss = (loss_fcn(encoder_result, t) * lm * weight_loss).sum() / (lm * weight_loss).sum()
+
+        lmd = lm.detach().cpu().numpy()
+
+        # calculate acc
+        res = (encoder_result.detach().cpu().numpy() > 0.5) * lmd
+        acc = ((res == t.detach().cpu().numpy()) * lmd).sum() / lmd.sum()
+
+        optim.zero_grad()
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), args.gradient_clipping)
+
+        optim.step()
+
+        avg_acc += acc
+        avg_loss += loss.detach().cpu().numpy()
+
+        # loss_print_step = 1000
+        # if step % loss_print_step == 0:
+        step += 1
+
+    now = datetime.datetime.now()
+
+    print(now.strftime("%H:%M") + ": TRAIN epoch: " + str(epoch) + " step: " + str(step) +
+          " train accuracy: " + str(avg_acc / step) + " loss: " + str(avg_loss / step))
+
+    with open(args.log_name, "a") as myfile:
+        myfile.write(now.strftime("%H:%M") + ": TRAIN epoch: " + str(epoch) + " step: " + str(step) +
+          " train accuracy: " + str(avg_acc / step) + " loss: " + str(avg_loss / step) + "\n")
+    # avg_acc = 0
+    # avg_loss = 0
+
+        # if step % 1800 == 0:
+        #     ap = eval_model(model, args, eval_examples, epoch)
+        #     model.train()
+        #
+        #     is_best = False
+        #     if ap > best_acc:
+        #         best_acc = ap
+        #         is_best = True
+        #
+        #     save_checkpoint({
+        #         'epoch': epoch,
+        #         'state_dict': model.state_dict(),
+        #         'optimizer': optim.state_dict(),
+        #         'current_acc': ap,
+        #     }, is_best, filename=model_dir+'epoch_'+str(epoch))
+
+        # step += 1
+
+
 
 def train_model(model, optim, loss_fcn, args, train_examples, eval_examples, epoch, best_acc):
     step = 0
@@ -212,7 +292,7 @@ def eval_model(model, optim, loss_fcn, args, eval_examples, epoch):
     avg_loss = 0
     step = 0
 
-    for start_index in range(0, dataset_size, batch_size):
+    for start_index in trange(0, dataset_size, batch_size):
         end_index = min(start_index + batch_size, dataset_size)
         batch = eval_examples[start_index: end_index]
 
@@ -319,8 +399,10 @@ max_length = args.max_length
 # model = RNNModelAtt1(args)
 # model = RNNModelAtt2(args)
 # model = RNNModelAtt1ShareEncoder(args)
-# model = RNNModelAtt1SeperateEncoder(args)
-model = RNNModelAtt1_Double_LSTM(args)
+model = RNNModelAtt1SeperateEncoder(args)
+# model = RNNModelAtt1_Double_LSTM(args)
+# model = RNNModelAtt1SeperateEncoder_Double_LSTM(args)
+# model = CNNModel(args)
 model.cuda()
 model.init_embeddings(music_embedding)
 
@@ -334,8 +416,8 @@ step = 0
 print(model)
 print("\n")
 
-args.log_name = "./log_RNNModelAtt1_Double_LSTM.txt"
-model_dir = base_dir + "/Data/wsdm2019/python/model/RNNModelAtt1_Double_LSTM/"
+args.log_name = "./log_RNNModelAtt1SeperateEncoder_weight_loss.txt"
+model_dir = base_dir + "/Data/wsdm2019/python/model/RNNModelAtt1SeperateEncoder_weight_loss/"
 
 with open(args.log_name, "w+") as myfile:
     myfile.write(str(model))
@@ -351,7 +433,8 @@ for epoch in range(args.num_train_epochs):
         with open(train_pkl_file, "rb") as f:
             train_examples = pickle.load(f)
 
-            train_model(model, optimizer, loss_fcn, args, train_examples, valid_examples, epoch, best_acc)
+            # train_model(model, optimizer, loss_fcn, args, train_examples, valid_examples, epoch, best_acc)
+            train_model_weight_loss(model, optimizer, loss_fcn, args, train_examples, valid_examples, epoch, best_acc)
 
             step += 1
 
@@ -371,9 +454,11 @@ for epoch in range(args.num_train_epochs):
                         'current_acc': ap,
                     }, is_best, filename=model_dir+'epoch_'+str(epoch))
 
-                print("Current best test ap is : " + str(best_acc))
+                print("Epoch " + str(epoch) + " Step " + str(step) + " best test ap is : " + str(best_acc))
+
                 with open(args.log_name, "a") as myfile:
-                    myfile.write("Current best test ap is : " + str(best_acc) + "\n")
+                    myfile.write("Epoch " + str(epoch) + " Step " + str(step) + " best test ap is : " +
+                                 str(best_acc) + "\n")
 
     # save_checkpoint({
     #
