@@ -4,7 +4,7 @@
 **Team Members**: Zhaoyue Cheng, Maksims Volkovs
 
 ## Environment and Requirements
-The model is implemented in Python 3.6 and tested on the following environment:
+The model is implemented and tested on the following Environment:
 * Intel(R) Xeon(R) CPU E5-2620 v4 @ 2.10GHz
 * 256GB RAM
 * Nvidia Titan Xp
