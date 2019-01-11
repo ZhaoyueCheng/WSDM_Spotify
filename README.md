@@ -13,7 +13,7 @@ The model is implemented in Python 3.6 and tested on the following environment:
 * Pandas
 * Pytorch 0.4.1 with Cuda 9.0
 
-## Executing
+## Preprocessing and Executing
 * Update soon
 
 ## Network Architecture
