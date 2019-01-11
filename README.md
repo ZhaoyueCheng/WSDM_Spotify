@@ -10,7 +10,7 @@ The model is implemented and tested on the following Environment:
 * Nvidia Titan Xp
 
 With Requirements:
-* Python3.6
+* Python 3.6
 * Numpy
 * Pandas
 * Pytorch 0.4.1 with Cuda 9.0
