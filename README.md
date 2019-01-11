@@ -1,6 +1,6 @@
 # ACM WSDM Spotify Skip Prediction Challenge: Utilizing Attention Mechanism for Sequential Skip Predcition
 
-**Team Name**: learner6
+**Team Name**: learner6  
 **Team Members**: Zhaoyue Cheng, Maksims Volkovs
 
 ## Environment and Requirements
