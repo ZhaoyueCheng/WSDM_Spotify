@@ -16,7 +16,7 @@ With Requirements:
 * Pytorch 0.4.1 with Cuda 9.0
 
 ## Preprocessing and Executing
-* Update soon
+* All the required code are uploaded, instructions to be updated soon
 
 ## Network Architecture
 ![Image of Architecture](https://github.com/ZhaoyueCheng/WSDM_Spotify/blob/master/pics/architecture.jpg)
