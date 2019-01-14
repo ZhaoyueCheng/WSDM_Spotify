@@ -17,6 +17,7 @@ With Requirements:
 
 ## Preprocessing and Executing
 * All the required code are uploaded, instructions to be updated soon
+* The network we used is in folder models/rnn_model, we code up multiple different models but only be able to test one of them due to time constraints, the one we are using for the leaderboard submission is RNNModelAtt1SeperateEncoder in file rnn_model
 
 ## Network Architecture
 ![Image of Architecture](https://github.com/ZhaoyueCheng/WSDM_Spotify/blob/master/pics/architecture.jpg)
