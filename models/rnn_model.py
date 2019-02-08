@@ -639,6 +639,90 @@ class RNNModelAtt1SeperateEncoder(nn.Module):
         self.song_embedding.weight.data.copy_(embedding_matrix)
 
 
+class RNNModelAttShareEncoder(nn.Module):
+    def __init__(self, args):
+        super(RNNModelAttShareEncoder, self).__init__()
+
+        self.song_embedding = nn.Embedding(num_embeddings=args.num_songs, embedding_dim=args.song_embedding_dim, padding_idx=0)
+        self.encode_rnn = StackedBRNN(input_size=args.song_embedding_dim,
+                                       hidden_size=int(args.encoder_rnn_hidden_dim / 2),
+                                       num_layers=args.encoder_rnn_layers, dropout_rate=args.encoder_rnn_dropout,
+                                       rnn_type=nn.LSTM, concat_layers=False, dropout_output=False)
+
+        self.encode_attn_self = SelfAttnMatch(args.encoder_rnn_hidden_dim, identity=False)
+
+        self.ff = FeedForwardNetwork(input_size=args.encoder_rnn_hidden_dim * 2,
+                                      hidden_size=int(args.encoder_rnn_hidden_dim),
+                                      output_size=1, dropout_rate=args.feed_forward_dropout)
+
+        self.dropout_rate = args.feed_forward_dropout
+
+
+    def forward(self, ht, hf, hm, pt, pm):
+
+        song_vec_history = self.song_embedding(ht)
+        song_vec_predict = self.song_embedding(pt)
+
+        song_input = torch.cat((song_vec_history, song_vec_predict), dim=1)
+
+        combine_mask = torch.cat((hm, pm), dim=1)
+        rnn_output_encode = self.encode_rnn(x=song_input, x_mask=combine_mask)
+
+        # match history to predict
+        attn_song_encode = self.encode_attn_self(rnn_output_encode, combine_mask)
+
+        # encoded results
+        final_repr = torch.cat((rnn_output_encode, attn_song_encode), dim=2)
+
+        predict_batch_len = pm.size(1)
+
+        logits = F.sigmoid(self.ff(final_repr).squeeze(-1))[:, -predict_batch_len:]
+
+        return logits
+
+    def init_embeddings(self, embedding_matrix):
+        self.song_embedding.weight.data.copy_(embedding_matrix)
+
+
+class RNNModelAttShareEncoderFeature(nn.Module):
+    def __init__(self, args):
+        super(RNNModelAttShareEncoderFeature, self).__init__()
+
+        self.song_embedding = nn.Embedding(num_embeddings=args.num_songs, embedding_dim=args.song_embedding_dim, padding_idx=0)
+        self.encode_rnn = StackedBRNN(input_size=args.song_embedding_dim + args.feature_dim,
+                                       hidden_size=int(args.encoder_rnn_hidden_dim / 2),
+                                       num_layers=args.encoder_rnn_layers, dropout_rate=args.encoder_rnn_dropout,
+                                       rnn_type=nn.LSTM, concat_layers=False, dropout_output=False)
+
+        # self.encode_attn_self = SelfAttnMatch(args.encoder_rnn_hidden_dim, identity=False)
+
+        self.ff = FeedForwardNetwork(input_size=args.encoder_rnn_hidden_dim,
+                                      hidden_size=int(args.encoder_rnn_hidden_dim/2),
+                                      output_size=1, dropout_rate=args.feed_forward_dropout)
+
+        self.dropout_rate = args.feed_forward_dropout
+
+
+    def forward(self, ht, hf, hm, pt, pm):
+
+        song_vec_history = torch.cat((self.song_embedding(ht), hf), dim=2)
+        song_vec_predict = torch.cat((self.song_embedding(pt), torch.zeros(hf.size()).cuda()), dim=2)
+
+        song_input = torch.cat((song_vec_history, song_vec_predict), dim=1)
+
+        combine_mask = torch.cat((hm, pm), dim=1)
+        rnn_output_encode = self.encode_rnn(x=song_input, x_mask=combine_mask)
+
+        predict_batch_len = pm.size(1)
+
+        logits = F.sigmoid(self.ff(rnn_output_encode).squeeze(-1))[:, -predict_batch_len:]
+
+        return logits
+
+    def init_embeddings(self, embedding_matrix):
+        self.song_embedding.weight.data.copy_(embedding_matrix)
+
+
 class RNNModelAtt2(nn.Module):
     def __init__(self, args):
         super(RNNModelAtt2, self).__init__()

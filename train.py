@@ -18,9 +18,9 @@ import glob
 args = set_args()
 
 # Local setup
-# base_dir = "/media/data2/"
+base_dir = "/media/data2/"
 # AWS Setup
-base_dir = "/home/ubuntu/"
+# base_dir = "/home/ubuntu/"
 
 train_set_dir = base_dir + "/Data/wsdm2019/data/training_set/"
 test_set_dir = base_dir + "/Data/wsdm2019/data/test_set/"
@@ -399,10 +399,14 @@ max_length = args.max_length
 # model = RNNModelAtt1(args)
 # model = RNNModelAtt2(args)
 # model = RNNModelAtt1ShareEncoder(args)
-model = RNNModelAtt1SeperateEncoder(args)
+# model = RNNModelAtt1SeperateEncoder(args)
 # model = RNNModelAtt1_Double_LSTM(args)
 # model = RNNModelAtt1SeperateEncoder_Double_LSTM(args)
 # model = CNNModel(args)
+
+# model = RNNModelAttShareEncoder(args)
+model = RNNModelAttShareEncoderFeature(args)
+
 model.cuda()
 model.init_embeddings(music_embedding)
 
@@ -416,8 +420,8 @@ step = 0
 print(model)
 print("\n")
 
-args.log_name = "./log_RNNModelAtt1SeperateEncoder_weight_loss.txt"
-model_dir = base_dir + "/Data/wsdm2019/python/model/RNNModelAtt1SeperateEncoder_weight_loss/"
+args.log_name = "./log_RNNModelAttShareEncoderFeature.txt"
+model_dir = base_dir + "/Data/wsdm2019/python/model/RNNModelAttShareEncoderFeature/"
 
 with open(args.log_name, "w+") as myfile:
     myfile.write(str(model))
@@ -433,8 +437,8 @@ for epoch in range(args.num_train_epochs):
         with open(train_pkl_file, "rb") as f:
             train_examples = pickle.load(f)
 
-            # train_model(model, optimizer, loss_fcn, args, train_examples, valid_examples, epoch, best_acc)
-            train_model_weight_loss(model, optimizer, loss_fcn, args, train_examples, valid_examples, epoch, best_acc)
+            train_model(model, optimizer, loss_fcn, args, train_examples, valid_examples, epoch, best_acc)
+            # train_model_weight_loss(model, optimizer, loss_fcn, args, train_examples, valid_examples, epoch, best_acc)
 
             step += 1
 

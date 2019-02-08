@@ -386,9 +386,9 @@ best_acc = 0
 # model_dir = "/home/joey/Desktop/ensemble/RNNModelAtt1SeperateEncoder_6309/"
 # model_dir = "/home/joey/Desktop/ensemble/RNNModelAtt1SeperateEncoder_6315/"
 # model_dir = "/home/joey/Desktop/ensemble/RNNModelAtt1_Double_LSTM_6294/"
-# model_dir = "/home/joey/Desktop/ensemble/RNNModelAtt1_Double_LSTM_6302/"
+model_dir = "/home/joey/Desktop/ensemble/RNNModelAtt1_Double_LSTM_6302/"
 # model_dir = "/home/joey/Desktop/ensemble/RNNModelAtt1SeperateEncoder_Double_LSTM_6285/"
-model_dir = "/home/joey/Desktop/ensemble/RNNModelAtt1SeperateEncoder_Double_LSTM_6298/"
+# model_dir = "/home/joey/Desktop/ensemble/RNNModelAtt1SeperateEncoder_Double_LSTM_6298/"
 
 
 print("Model Dir: " + model_dir)
