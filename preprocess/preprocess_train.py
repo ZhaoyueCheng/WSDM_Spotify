@@ -34,7 +34,7 @@ with open (track_features_dir + "track2idx_all.pkl", "rb") as f:
 counter = 0
 
 # !temporary! Process last 66 elements
-train_files = train_files[66*9:]
+# train_files = train_files[66*9:]
 
 for file in train_files:
     print("processing file: " + file)
